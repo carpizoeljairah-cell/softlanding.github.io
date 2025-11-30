@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Development Test Bank App</title>
-    <!-- Load Tailwind CSS -->
+    <title>Development Test Bank App - Standalone</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -29,108 +28,38 @@
         }
     </style>
 
-    <!-- Firebase SDK Imports -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence, deleteUser } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, setLogLevel, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- HARDCODED FIREBASE CONFIGURATION (Provided by User) ---
-        const appId = "testbank-5f9eb"; // Manually set Project ID
+        // 🚨 No Firebase or any other database SDK is imported. 🚨
         
-        const firebaseConfig = {
-            apiKey: "AIzaSyBNAyPLF4TkGNxUZQpZ43vHgwVauChlBMU",
-            authDomain: "testbank-5f9eb.firebaseapp.com",
-            projectId: "testbank-5f9eb",
-            storageBucket: "testbank-5f9eb.firebasestorage.app",
-            messagingSenderId: "898948403916",
-            appId: "1:898948403916:web:a15cc091543c59bc386869"
-        };
-        
-        const initialAuthToken = null; 
-        
-        // Expose Firebase objects globally for the application script
-        window.firebaseApp = initializeApp(firebaseConfig);
-        
-        window.db = getFirestore(window.firebaseApp);
-        window.auth = getAuth(window.firebaseApp);
-        
-        // Enable debug logging for Firebase
-        setLogLevel('debug'); 
-
-        window.userId = null;
-        window.isAuthReady = false;
-
-        // Function to handle initial authentication
-        async function authenticateUser() {
-            try {
-                // Set persistence to session to avoid constant re-auth
-                await setPersistence(window.auth, browserSessionPersistence);
-
-                if (initialAuthToken) {
-                    await signInWithCustomToken(window.auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(window.auth);
-                }
-                
-                // Listener to capture UID after successful sign-in
-                onAuthStateChanged(window.auth, (user) => {
-                    if (user) {
-                        window.userId = user.uid;
-                        window.isAuthReady = true;
-                    } else {
-                        window.isAuthReady = true;
-                    }
-                    // Re-render the name input screen to enable the button/update status
-                    if(document.getElementById('name-input')) {
-                        window.renderNameInput();
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase Auth Error:", error);
-                window.isAuthReady = true; // Still allow app to proceed even if auth failed
-                if(document.getElementById('name-input')) {
-                    window.renderNameInput();
-                }
-            }
-        }
-
-        authenticateUser();
-        
-        // Expose necessary Firestore functions
-        window.fs = { addDoc, collection, query, onSnapshot, serverTimestamp, getDocs, writeBatch };
-        window.getUserId = () => window.userId || crypto.randomUUID();
-        window.getAppId = () => appId;
+        // Mock authentication state and User ID generation (no actual authentication takes place)
+        window.isAuthReady = true; // Always ready since there's no network delay
+        window.getUserId = () => sessionStorage.getItem('localUserId') || (sessionStorage.setItem('localUserId', crypto.randomUUID()), sessionStorage.getItem('localUserId'));
+        window.getAppId = () => "standalone-testbank"; // Just a local identifier
     </script>
 
 
 </head>
 <body class="min-h-screen flex items-start justify-center p-4 sm:p-8">
 
-    <!-- Main Application Container -->
     <div id="app-container" class="w-full max-w-2xl bg-white rounded-xl p-6 sm:p-8 card mt-8">
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-extrabold text-gray-800">Development Test Bank</h1>
+            <h1 class="text-4xl font-extrabold text-gray-800">Development Test Bank (Local)</h1>
             <div id="header-info" class="header-section">
                 <p id="user-info" class="text-sm text-gray-500 font-medium"></p>
                 <p id="category-title" class="text-xl font-semibold text-indigo-600 mt-2"></p>
             </div>
         </header>
 
-        <!-- Content will be rendered here (Name Input, Menu, Quiz, Results) -->
         <div id="content">
-            <!-- Initial content will be the name input screen -->
             <div class="text-center p-8 text-gray-500">Loading Application...</div>
         </div>
 
     </div>
 
-    <!-- Message Box / Modal Structure (Replaces alert()) -->
     <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm transform transition-all">
             <h3 class="text-2xl font-bold text-gray-800 mb-4" id="modal-title">Notification</h3>
             <p id="modal-message" class="text-gray-700 mb-6"></p>
-            <!-- Custom content area for admin login -->
             <div id="modal-custom-content"></div>
             <button id="modal-default-button" onclick="hideMessageBox()" class="w-full py-2 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition shadow-md">OK, Got it!</button>
         </div>
@@ -138,7 +67,7 @@
 
 
     <script type="module">
-        // --- 1. QUIZ DATA ---
+        // --- 1. QUIZ DATA --- (Unchanged, remains local)
         const quizData = {
             "Garments": {
                 name: "Garments",
@@ -172,7 +101,7 @@
             }
         };
 
-        // --- 2. APPLICATION STATE ---
+        // --- 2. APPLICATION STATE --- (Unchanged)
         let currentCategory = null;
         let currentQuestionIndex = 0;
         let score = 0;
@@ -180,11 +109,10 @@
         let userName = ''; 
         
         // --- ADMIN LOGIN CONFIGURATION ---
-        // The admin must enter this secret key to unlock the admin view.
-        const ADMIN_SECRET_KEY = "TestBankAdmin2025"; 
-        let isAdminLoggedIn = false; // New state to track admin session
+        const ADMIN_SECRET_KEY = "TestBankAdmin2025"; // Keep for local admin access check
+        let isAdminLoggedIn = false; 
 
-        // --- DOM Elements ---
+        // --- DOM Elements --- (Unchanged)
         const contentDiv = document.getElementById('content');
         const categoryTitleElement = document.getElementById('category-title');
         const userInfoElement = document.getElementById('user-info');
@@ -194,26 +122,26 @@
         const modalDefaultButton = document.getElementById('modal-default-button');
         const modalCustomContent = document.getElementById('modal-custom-content');
 
-        // --- 3. CORE LOGIC FUNCTIONS ---
+        // --- 3. CORE LOGIC FUNCTIONS --- (Modified to remove database calls)
 
-        // Function to display custom message box (replaces alert())
+        // Function to display custom message box (Unchanged)
         function showMessageBox(message, title = "Notification") {
             modalTitle.textContent = title;
             modalMessage.innerHTML = message;
-            modalCustomContent.innerHTML = ''; // Clear custom content
+            modalCustomContent.innerHTML = ''; 
             modalDefaultButton.style.display = 'block';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
 
-        // Function to hide custom message box
+        // Function to hide custom message box (Unchanged)
         window.hideMessageBox = function() {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            modalCustomContent.innerHTML = ''; // Ensure input is removed on close
+            modalCustomContent.innerHTML = ''; 
         }
 
-        // Helper to map option letter to text
+        // Helper to map option letter to text (Unchanged)
         function getOptionText(question, option) {
             switch (option) {
                 case 'a': return question.a;
@@ -224,7 +152,7 @@
             }
         }
 
-        // Handles user selecting an answer
+        // Handles user selecting an answer (Unchanged logic, just relies on local score)
         function handleAnswerClick(userAns) {
             if (!quizRunning) return; 
 
@@ -237,19 +165,19 @@
                 const optionLetter = el.getAttribute('data-option');
                 if (optionLetter === currentQ.ans) {
                     el.classList.remove('bg-indigo-100', 'hover:bg-indigo-200');
-                    el.classList.add('bg-green-200', 'border-green-500'); // Correct Answer Highlight
+                    el.classList.add('bg-green-200', 'border-green-500'); 
                 } else if (optionLetter === userAns) {
                     el.classList.remove('bg-indigo-100', 'hover:bg-indigo-200');
-                    el.classList.add('bg-red-200', 'border-red-500'); // User's Wrong Answer Highlight
+                    el.classList.add('bg-red-200', 'border-red-500'); 
                 }
-                el.disabled = true; // Disable all buttons
+                el.disabled = true; 
             });
 
             if (isCorrect) {
                 score++;
             }
 
-            quizRunning = false; // Pause interaction until next question
+            quizRunning = false; 
 
             // Move to the next question or results after a short delay
             setTimeout(() => {
@@ -259,60 +187,25 @@
                 } else {
                     renderResults();
                 }
-                quizRunning = true; // Resume interaction for next question screen
-            }, 1000); // 1 second delay to let user see the feedback
+                quizRunning = true; 
+            }, 1000); 
         }
 
-        // Resets the quiz state for a new attempt
+        // Resets the quiz state for a new attempt (Unchanged)
         function resetQuiz() {
             currentQuestionIndex = 0;
             score = 0;
             quizRunning = true;
         }
 
-        // Firestore function to save results in both private and public paths
-        async function saveResult(categoryName, score, total) {
-            if (!window.isAuthReady) {
-                console.error("Attempted to save result before authentication was ready.");
-                return;
-            }
-
-            const resultData = {
-                userId: window.getUserId(),
-                user: userName,
-                category: categoryName,
-                score: score,
-                total: total,
-                percentage: (score / total) * 100,
-                timestamp: fs.serverTimestamp()
-            };
-
-            // 1. Save to Private Location (for user's history)
-            const privatePath = `artifacts/${window.getAppId()}/users/${window.getUserId()}/quiz_results`;
-            try {
-                await fs.addDoc(fs.collection(window.db, privatePath), resultData);
-                console.log("Private quiz result saved.");
-            } catch (e) {
-                console.error("Error saving private document: ", e);
-            }
-            
-            // 2. Save to Public Location (for admin/creator access)
-            const publicPath = `artifacts/${window.getAppId()}/public/data/all_quiz_results`;
-            try {
-                await fs.addDoc(fs.collection(window.db, publicPath), resultData);
-                console.log("Public quiz result saved.");
-            } catch (e) {
-                console.error("Error saving public document: ", e);
-                showMessageBox("Error saving quiz results to the database. Check the console for details.");
-            }
-        }
-
-        // --- 4. ADMIN LOGIN & LOGOUT ---
+        // 🗑️ REMOVED: saveResult function - no saving to a database anymore.
+        
+        // --- 4. ADMIN LOGIN & LOGOUT --- (Retained for local access to the 'admin view' history)
 
         window.showAdminLoginPrompt = function() {
             modalTitle.textContent = "Admin Login Required";
             modalMessage.innerHTML = `<p class="text-sm text-gray-500">Enter the secret key to access the administration panel.</p>`;
-            modalDefaultButton.style.display = 'none'; // Hide default OK button
+            modalDefaultButton.style.display = 'none'; 
             
             modalCustomContent.innerHTML = `
                 <input 
@@ -338,8 +231,8 @@
             if (key === ADMIN_SECRET_KEY) {
                 isAdminLoggedIn = true;
                 hideMessageBox();
-                showMessageBox(`Welcome back, Creator! Admin view is now enabled.`, "Admin Access Granted");
-                renderMenu(); // Refresh menu to show admin button
+                showMessageBox(`Welcome back, Creator! Admin view is now enabled. (History view is disabled in this standalone version)`, "Admin Access Granted");
+                renderMenu(); 
             } else {
                 showMessageBox(`Incorrect secret key. Access denied.`, "Login Failed");
             }
@@ -348,104 +241,22 @@
         window.adminLogout = function() {
             isAdminLoggedIn = false;
             showMessageBox(`Admin access has been revoked.`, "Admin Logged Out");
-            renderMenu(); // Refresh menu
+            renderMenu(); 
         };
 
         // --- 5. ACCOUNT DELETION LOGIC ---
-
-        window.confirmAccountDeletion = function() {
-            modalTitle.textContent = "Confirm Account Deletion";
-            modalMessage.innerHTML = `
-                <p class="text-red-700 font-semibold mb-3">
-                    WARNING: This action is irreversible.
-                </p>
-                <p class="text-sm text-gray-700">
-                    Are you sure you want to permanently delete your account and all associated quiz history? 
-                    This will log you out and your current User ID (${window.getUserId().substring(0, 8)}...) will be permanently deleted.
-                </p>
-            `;
-            modalDefaultButton.style.display = 'none';
-            
-            modalCustomContent.innerHTML = `
-                <div class="flex space-x-4 mt-6">
-                    <button 
-                        class="flex-1 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition shadow-md"
-                        onclick="deleteUserAccount()"
-                    >
-                        Yes, Delete My Account
-                    </button>
-                    <button 
-                        class="flex-1 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition shadow-md"
-                        onclick="hideMessageBox()"
-                    >
-                        No, Keep My Account
-                    </button>
-                </div>
-            `;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        };
-
-        async function deleteUserAccount() {
-            if (!window.auth.currentUser) {
-                showMessageBox("Error: Not currently logged in.", "Deletion Failed");
-                return;
-            }
-            
-            const userToDelete = window.auth.currentUser;
-            const uid = userToDelete.uid;
-
-            try {
-                // 1. Delete all private quiz results (batch deletion is necessary for collections)
-                const privatePath = `artifacts/${window.getAppId()}/users/${uid}/quiz_results`;
-                const collectionRef = fs.collection(window.db, privatePath);
-                
-                const snapshot = await fs.getDocs(collectionRef);
-                const batch = fs.writeBatch(window.db);
-
-                snapshot.docs.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-
-                await batch.commit();
-                console.log(`Successfully deleted ${snapshot.size} private quiz results for user ${uid}.`);
-
-                // 2. Delete the Firebase Authentication User
-                await deleteUser(userToDelete);
-
-                showMessageBox("Success! Your account and all private data have been permanently deleted.", "Account Deleted");
-                
-                // 3. Reset application state and restart
-                userName = '';
-                isAdminLoggedIn = false;
-                window.isAuthReady = false; // Force re-authentication on refresh
-                setTimeout(() => window.location.reload(), 1000);
-
-            } catch (error) {
-                console.error("Error during account deletion:", error);
-                
-                let errorMessage = "An unknown error occurred during deletion.";
-                if (error.code === 'auth/requires-recent-login') {
-                    errorMessage = "Deletion failed. For security, please log out and log back in, then immediately try deleting your account again.";
-                } else {
-                    errorMessage = `Failed to delete account. Error: ${error.message}`;
-                }
-                
-                showMessageBox(errorMessage, "Deletion Failed");
-            }
-        }
-
+        // 🗑️ REMOVED: All account deletion logic as there is no account or private data to delete.
 
         // --- 6. RENDER FUNCTIONS ---
-
+        // renderNameInput, validateName, renderQuiz, renderResults: Logic unchanged, but references to saving/loading are removed.
+        
         function renderNameInput() {
-            window.contentRendered = true; // Flag to indicate content has been rendered
+            window.contentRendered = true; 
             categoryTitleElement.textContent = "Welcome";
             userInfoElement.innerHTML = '';
 
             let html = `
                 <p class="text-lg text-gray-600 mb-6 text-center">Please enter your name to start the Test Bank application.</p>
-                ${!window.isAuthReady ? '<p class="text-yellow-600 text-center mb-4">Connecting to database...</p>' : ''}
                 <div class="space-y-4">
                     <input 
                         id="name-input"
@@ -456,9 +267,8 @@
                         onkeydown="if(event.key === 'Enter') validateName()"
                     />
                     <button 
-                        class="w-full py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 transition duration-150 font-semibold text-lg shadow-md disabled:bg-indigo-300"
+                        class="w-full py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 transition duration-150 font-semibold text-lg shadow-md"
                         onclick="validateName()"
-                        ${!window.isAuthReady ? 'disabled' : ''}
                     >
                         Continue
                     </button>
@@ -468,8 +278,6 @@
         }
 
         window.validateName = function() {
-            if (!window.isAuthReady) return;
-
             const nameInput = document.getElementById('name-input');
             const name = nameInput.value.trim();
 
@@ -486,7 +294,7 @@
             if (!userName) return renderNameInput();
 
             categoryTitleElement.textContent = `Hello, ${userName}!`;
-            userInfoElement.innerHTML = `User ID: <span class="font-mono text-xs">${window.getUserId()}</span>`;
+            userInfoElement.innerHTML = `Local ID: <span class="font-mono text-xs">${window.getUserId().substring(0, 8)}...</span>`;
             
             const categoryKeys = Object.keys(quizData);
             let html = `
@@ -510,30 +318,32 @@
                 </div>
                 <div class="mt-8 grid grid-cols-3 gap-4">
                     <button 
-                        onclick="renderHistory('private')" 
-                        class="py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 transition duration-150 font-semibold shadow-md col-span-1"
+                        onclick="showMessageBox('History is disabled in this standalone version as no database is connected.')" 
+                        class="py-2 bg-gray-400 text-gray-700 rounded-lg font-semibold shadow-md col-span-2 disabled:opacity-50"
+                        disabled
                     >
-                        My History
+                        My History (Disabled)
                     </button>
                     <button 
-                        onclick="confirmAccountDeletion()" 
-                        class="py-2 bg-red-400 text-white rounded-lg hover:bg-red-600 transition duration-150 font-semibold shadow-md col-span-1"
+                        onclick="showMessageBox('No account to delete in this standalone version.')" 
+                        class="py-2 bg-gray-400 text-gray-700 rounded-lg font-semibold shadow-md col-span-1 disabled:opacity-50"
+                        disabled
                     >
-                        Delete Account
+                        Delete Account (Disabled)
                     </button>
                     <button 
                         onclick="showMessageBox('Thank you for using the Development Test Bank App, ${userName}.')" 
-                        class="py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition duration-150 font-semibold col-span-1"
+                        class="py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition duration-150 font-semibold col-span-3"
                     >
                         Exit Program
                     </button>
                     
                     ${isAdminLoggedIn ? `
                         <button 
-                            onclick="renderHistory('admin')" 
+                            onclick="showMessageBox('Admin View is only for data retrieval, which is disabled in this standalone version.')" 
                             class="py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition duration-150 font-semibold shadow-md mt-4 col-span-2"
                         >
-                            Admin View (All Results)
+                            Admin View (Disabled)
                         </button>
                         <button 
                             onclick="adminLogout()" 
@@ -546,7 +356,7 @@
                             onclick="showAdminLoginPrompt()" 
                             class="col-span-3 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-150 font-semibold shadow-md mt-4"
                         >
-                            Admin Login
+                            Admin Login (Local)
                         </button>
                     `}
                 </div>
@@ -554,9 +364,10 @@
             contentDiv.innerHTML = html;
         }
 
+        // renderQuiz function (Unchanged)
         function renderQuiz() {
             if (!currentCategory || currentQuestionIndex >= currentCategory.questions.length) {
-                return renderMenu(); // Safety check
+                return renderMenu(); 
             }
 
             const currentQ = currentCategory.questions[currentQuestionIndex];
@@ -599,12 +410,12 @@
             quizRunning = true;
         }
 
+        // renderResults function (Modified: removed saveResult call)
         function renderResults() {
             const totalQ = currentCategory.questions.length;
             const percentage = (score / totalQ * 100).toFixed(0);
 
-            // Save the result to Firestore (both private and public paths)
-            saveResult(currentCategory.name, score, totalQ);
+            // 🗑️ REMOVED: saveResult(currentCategory.name, score, totalQ);
 
             categoryTitleElement.textContent = `${currentCategory.name} - Results`;
 
@@ -613,7 +424,7 @@
                     <p class="text-3xl font-extrabold text-gray-800 mb-2">${userName}, Quiz Complete!</p>
                     <p class="text-4xl font-black text-green-700">You scored ${score} / ${totalQ}</p>
                     <p class="text-lg text-gray-600 mt-2">${percentage}% accuracy</p>
-                    <p class="text-sm text-gray-500 mt-2">(Result saved to history for you and the creator)</p>
+                    <p class="text-sm text-gray-500 mt-2 text-red-500 font-medium">(Note: Result was NOT saved to a database.)</p>
                 </div>
 
                 <p class="text-xl font-semibold text-gray-700 mb-4">What would you like to do next?</p>
@@ -643,106 +454,7 @@
             quizRunning = false;
         }
         
-        // Updated to handle both private and admin views
-        window.renderHistory = function(viewType) {
-            if (!window.isAuthReady) {
-                showMessageBox("Database connection is not ready. Please try again.");
-                return;
-            }
-
-            let historyTitle = viewType === 'admin' ? `Admin View (All Users)` : `My Quiz History for ${userName}`;
-            let backButtonText = viewType === 'admin' ? `Back to Menu (Admin)` : `Back to Menu`;
-            let loadingText = viewType === 'admin' ? `Loading ALL quiz results...` : `Loading YOUR quiz history...`;
-            
-            categoryTitleElement.textContent = historyTitle;
-            contentDiv.innerHTML = `
-                <button onclick="renderMenu()" class="text-indigo-600 hover:text-indigo-800 mb-4 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H16a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                    </svg>
-                    ${backButtonText}
-                </button>
-                <div id="history-loading" class="text-center p-8 text-gray-500">${loadingText}</div>
-                <div id="history-list" class="overflow-x-auto"></div>
-            `;
-            
-            fetchHistory(viewType);
-        }
-
-        function fetchHistory(viewType) {
-            // Determine the path based on the view type
-            const path = viewType === 'admin' 
-                ? `artifacts/${window.getAppId()}/public/data/all_quiz_results` 
-                : `artifacts/${window.getAppId()}/users/${window.getUserId()}/quiz_results`;
-
-            const resultsCollection = fs.collection(window.db, path);
-            const historyList = document.getElementById('history-list');
-            const historyLoading = document.getElementById('history-loading');
-            
-            // Define table headers based on view type
-            const baseHeaders = `
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Percentage</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            `;
-            const adminUserHeader = `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>`;
-            const tableHeaders = viewType === 'admin' ? adminUserHeader + baseHeaders : baseHeaders;
-
-
-            const unsubscribe = fs.onSnapshot(resultsCollection, (snapshot) => {
-                const results = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const timestamp = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : 'N/A';
-                    results.push({ id: doc.id, ...data, timestampFormatted: timestamp });
-                });
-
-                results.sort((a, b) => b.timestamp.seconds - a.timestamp.seconds);
-                
-                if (historyLoading) historyLoading.remove();
-                
-                if (results.length === 0) {
-                    historyList.innerHTML = `<div class="text-center p-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg mt-4">No quiz results found yet. Start a quiz!</div>`;
-                    return;
-                }
-
-                let tableHtml = `
-                    <table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden border">
-                        <thead class="bg-gray-50">
-                            <tr>${tableHeaders}</tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                `;
-
-                results.forEach(res => {
-                    const textColor = res.percentage >= 80 ? 'text-green-600' : res.percentage >= 60 ? 'text-yellow-600' : 'text-red-600';
-                    const adminUserCell = viewType === 'admin' ? `<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">${res.user || 'Unknown'}</td>` : '';
-                    
-                    tableHtml += `
-                        <tr class="hover:bg-gray-50">
-                            ${adminUserCell}
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${res.category}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${res.score}/${res.total}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${textColor} hidden sm:table-cell">${res.percentage.toFixed(0)}%</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${res.timestampFormatted}</td>
-                        </tr>
-                    `;
-                });
-
-                tableHtml += `
-                        </tbody>
-                    </table>
-                `;
-                historyList.innerHTML = tableHtml;
-            }, (error) => {
-                console.error("Error fetching history:", error);
-                if (historyLoading) historyLoading.remove();
-                historyList.innerHTML = `<div class="text-center p-8 text-red-600 border-2 border-dashed border-red-300 rounded-lg mt-4">Failed to load history. Database error.</div>`;
-            });
-
-            // Note: In a production app, you would handle the unsubscribe on component unmount.
-        }
+        // 🗑️ REMOVED: renderHistory and fetchHistory functions.
 
         // --- 7. INITIALIZATION & PUBLIC ACCESSORS ---
 
@@ -757,20 +469,13 @@
             }
         };
 
-        window.confirmAccountDeletion = confirmAccountDeletion;
-        window.deleteUserAccount = deleteUserAccount;
+        // Expose necessary functions
         window.handleAnswerClick = handleAnswerClick;
 
         // Start the application by rendering the name input screen immediately
         document.addEventListener('DOMContentLoaded', () => {
-             // New variable to track if content has been rendered
-             window.contentRendered = false; 
-             
-             // Render the name input screen immediately upon DOM load.
-             renderNameInput();
-
-             // The authentication process will continue in the background and re-render the input
-             // screen (to enable the button) once it's complete.
+            window.contentRendered = false; 
+            renderNameInput();
         });
     </script>
 </body>
